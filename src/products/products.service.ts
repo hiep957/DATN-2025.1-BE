@@ -33,7 +33,9 @@ export class ProductsService {
         @InjectRepository(ProductVariant) private variantRepo: Repository<ProductVariant>,
         @InjectRepository(Category) private readonly categoryRepo: Repository<Category>,
         @InjectRepository(Brand) private readonly brandRepo: Repository<Brand>,
-        @InjectRepository(Color) private readonly productImage: Repository<ProductImage>,
+        @InjectRepository(Color) private readonly colorRepo: Repository<Color>,
+        @InjectRepository(Size) private readonly sizeRepo: Repository<Size>,
+
         private dataSource: DataSource
     ) { }
 
@@ -267,7 +269,7 @@ export class ProductsService {
                 }
             }
 
-        
+
             // ====== 5) Đồng bộ images
             if (dto.images !== undefined) {
                 // Snapshot các ID ảnh hiện có NGAY TỪ ĐẦU
@@ -413,6 +415,9 @@ export class ProductsService {
             page = 1,
             limit = 10,
         } = query;
+        console.log('SearchProducts with query:', sizes);
+        const sizeArray = sizes ? sizes.split(',') : [];
+        const colorArray = colors ? colors.split(',') : [];
         const qb = this.productRepo.createQueryBuilder('product');
         qb.leftJoinAndSelect('product.category', 'category');
         qb.leftJoinAndSelect('product.brand', 'brand');
@@ -438,7 +443,7 @@ export class ProductsService {
         // 2. Lọc theo các thuộc tính của Variant (phần khó)
         // Chúng ta cần tìm các product ID có variant thỏa mãn điều kiện
         const variantConditionsMet =
-            minPrice || maxPrice || (colors && colors.length > 0) || (sizes && sizes.length > 0);
+            minPrice || maxPrice || (colorArray && colorArray.length > 0) || (sizeArray && sizeArray.length > 0);
 
         if (variantConditionsMet) {
             // Tạo một subquery để lấy tất cả product.id có variant thỏa mãn
@@ -454,10 +459,10 @@ export class ProductsService {
                 subQuery.andWhere('variant_sub.price <= :maxPrice', { maxPrice });
             }
             if (colors && colors.length > 0) {
-                subQuery.andWhere('color_sub.code IN (:...colors)', { colors });
+                subQuery.andWhere('color_sub.englishName IN (:...colors)', { colors: colorArray });
             }
-            if (sizes && sizes.length > 0) {
-                subQuery.andWhere('size_sub.code IN (:...sizes)', { sizes });
+            if (sizeArray && sizeArray.length > 0) {
+                subQuery.andWhere('size_sub.code IN (:...sizes)', { sizes: sizeArray });
             }
 
             // Áp dụng subquery vào query chính
@@ -492,5 +497,50 @@ export class ProductsService {
 
     }
 
+
+    async getSizes() {
+        const sizes = await this.sizeRepo.find();
+        if (!sizes) {
+            throw new BadRequestException('Sizes not found');
+        }
+        return sizes;
+    }
+    async getColors() {
+        const colors = await this.colorRepo.find();
+        if (!colors) {
+            throw new BadRequestException('Colors not found');
+        }
+        return colors;
+    }
+    async getCategories() {
+        console.log('Fetching categories');
+        const categories = await this.categoryRepo.find(
+            { relations: { parent: true } }
+        );
+
+        if (!categories) {
+            throw new BadRequestException('Categories not found');
+        }
+        // Bước 2: Dùng map để biến đổi cấu trúc
+        const transformedCategories = categories.map(category => {
+            // Lấy parentId từ parent object, nếu parent không tồn tại thì là null/undefined
+            const parentId = category.parent ? category.parent.id : null;
+
+            // Trả về một object mới
+            return {
+                id: category.id,
+                name: category.name,
+                slug: category.slug,
+                thumbnail: category.thumbnail,
+                // Thay thế 'parent' object bằng 'parentId'
+                parentId: parentId,
+                // Nếu bạn muốn giữ lại các thuộc tính khác, bạn có thể dùng spread operator
+                // ...category, 
+                // parentId: parentId,
+                // parent: undefined // và loại bỏ thuộc tính parent
+            };
+        });
+        return transformedCategories;
+    }
 
 }

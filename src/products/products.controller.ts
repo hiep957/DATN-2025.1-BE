@@ -2,14 +2,32 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestj
 import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
+import { QueryProductDto } from './dto/search-product.dto';
 
 
 @Controller('products')
 export class ProductsController {
   constructor(private readonly productsService: ProductsService) { }
 
+  @Get('/categories')
+  async getCategoriesList() {
+    const categories = await this.productsService.getCategories();
+    return categories;
+  }
+
+  @Get('/sizes')
+  async getSizesList() {
+    const sizes = await this.productsService.getSizes();
+    return sizes;
+  }
+  @Get('/colors')
+  async getColorsList() {
+    const colors = await this.productsService.getColors();
+    return colors;
+  }
+
   @Get()
-  searchProducts(@Query() query: any) {
+  searchProducts(@Query() query: QueryProductDto) {
     console.log('Search query parameters:', query);
     return this.productsService.findAll(query);
   }
@@ -46,9 +64,6 @@ export class ProductsController {
     const result = await this.productsService.checkQuantityProductVariant(variantId);
     return { available: result };
   }
-
-
-
 
 
 }

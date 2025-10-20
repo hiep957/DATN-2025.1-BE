@@ -6,8 +6,8 @@ import * as cookieParser from 'cookie-parser';
 import { TransformInterceptor } from './common/interceptors/respose.interceptor';
 import { TypeOrmExceptionFilter } from './common/interceptors/typeorm-exception.filter';
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule,{
-    cors:{
+  const app = await NestFactory.create(AppModule, {
+    cors: {
       origin: 'http://localhost:8000',
       credentials: true,
     }
@@ -16,13 +16,16 @@ async function bootstrap() {
   app.use(cookieParser());
 
   app.useGlobalPipes(new ValidationPipe({
-    whitelist:true,
+    whitelist: true,
     transform: true,
-    forbidNonWhitelisted:true
+    transformOptions: {
+      enableImplicitConversion: true, // Rất quan trọng khi dùng @Query()
+    },
+    forbidNonWhitelisted: true
   }))
-  app.useGlobalFilters(new HttpExceptionFilter() ,new TypeOrmExceptionFilter())
+  app.useGlobalFilters(new HttpExceptionFilter(), new TypeOrmExceptionFilter())
   app.useGlobalInterceptors(new TransformInterceptor());
-   const port = process.env.PORT || 3000;
+  const port = process.env.PORT || 3000;
   await app.listen(port);
   console.log(`🚀 http://localhost:${port}`);
 }

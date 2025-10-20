@@ -1,6 +1,6 @@
 // src/products/dto/query-product.dto.ts
 import { Transform } from 'class-transformer';
-import { IsString, IsOptional, IsNumber, IsIn, IsArray } from 'class-validator';
+import { IsString, IsOptional, IsNumber, IsIn, IsArray, Matches } from 'class-validator';
 
 export class QueryProductDto {
   @IsOptional()
@@ -25,17 +25,22 @@ export class QueryProductDto {
   @Transform(({ value }) => parseInt(value))
   maxPrice?: number;
 
+  // Mảng id
   @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  @Transform(({ value }) => value.split(','))
-  colors?: string[];
+  @IsString()
+  // Bạn có thể thêm regex để đảm bảo định dạng là "A,B,C"
+  @Matches(/^[a-zA-Z0-9]+(,[a-zA-Z0-9]+)*$/, {
+    message: 'Colors must be a comma-separated string (e.g., red,blue,green)'
+  })
+  colors?: string;
 
   @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  @Transform(({ value }) => value.split(','))
-  sizes?: string[];
+  @IsString()
+  // Bạn có thể thêm regex để đảm bảo định dạng là "A,B,C"
+  @Matches(/^[a-zA-Z0-9]+(,[a-zA-Z0-9]+)*$/, {
+    message: 'Sizes must be a comma-separated string (e.g., XL,L)'
+  })
+  sizes?: string;
 
   @IsOptional()
   @IsString()
