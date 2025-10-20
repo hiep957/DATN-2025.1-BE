@@ -1,0 +1,48 @@
+ Ở đây sẽ có 1 vài đề xuất hay
+    - Tính phí sẽ sử dụng strategy pattern
+    // Định nghĩa cấu trúc chung cho mọi chiến lược tính ship
+interface ShippingStrategy {
+  calculate(order: Order): number; // Phương thức tính toán trả về phí ship
+}
+
+// Chiến lược 1: Phí cố định
+class FlatRateStrategy implements ShippingStrategy {
+  public calculate(order: Order): number {
+    return 30000; // Luôn trả về 30k
+  }
+}
+
+// Chiến lược 2: Freeship theo điều kiện
+class FreeShippingStrategy implements ShippingStrategy {
+  public calculate(order: Order): number {
+    if (order.getTotalPrice() > 500000) {
+      return 0; // Miễn phí
+    }
+    return 30000; // Không đủ điều kiện thì tính 30k
+  }
+}
+
+// Chiến lược 3: Theo khu vực
+class RegionalStrategy implements ShippingStrategy {
+  public calculate(order: Order): number {
+    const customerCity = order.getCustomerAddress().city;
+    if (customerCity === 'Hanoi' || customerCity === 'HCM') {
+      return 20000; // Nội thành
+    }
+    return 35000; // Tỉnh khác
+  }
+}
+
+ ----------------------   -------------------------------------
+
+ Factory Pattern: Dùng để tạo các đối tượng cho các cổng thanh toán khác nhau (COD, VNPay, Momo).
+
+
+
+ --------------------------------------------------------------
+
+ Observer Design Pattern cho phần yêu thích sản phẩm :) nếu có giảm giá thì gửi về
+
+
+UI đẹp
+ https://chatgpt.com/c/68ebf540-c030-8324-ba0c-a3aac8a3e9b2
