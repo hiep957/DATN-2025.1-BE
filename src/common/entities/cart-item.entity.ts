@@ -14,6 +14,15 @@ export class CartItem {
     @Column({ default: 1 })
     quantity: number;
 
+    @Column({nullable: true})
+    productId: number;
+
+    @Column({ nullable: true })
+    productName: string;
+
+    @Column({nullable: true})
+    productImage: string;
+
     // n CartItem <-> 1 Cart
     @ManyToOne(() => Cart, (cart) => cart.items, { onDelete: 'CASCADE' })
     cart: Cart;

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Res, ParseIntPipe, UsePipes, ValidationPipe, UseFilters, ForbiddenException, UseGuards, Req, BadRequestException } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Res, ParseIntPipe, UsePipes, ValidationPipe, UseFilters, ForbiddenException, UseGuards, Req, BadRequestException, Query } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -12,6 +12,7 @@ import { Roles } from 'src/common/decorators/role.decorator';
 import { RefreshGuard } from 'src/common/guards/refresh.guard';
 import { ok } from 'assert';
 import { PasswordService } from './password.service';
+import { QueuryUserDto } from './dto/query-user.dto';
 
 function setRefreshCookie(res: Response, token: string) {
   res.cookie(REFRESH_COOKIE_NAME, token, {
@@ -29,6 +30,10 @@ export class UsersController {
   ) { }
 
 
+  @Get('/get-users')
+  async getUsers(@Query() query: QueuryUserDto) {
+    return this.usersService.getUser(query);
+  }
 
   @Post('register')
   async register(@Body() createUserDto: CreateUserDto, @Res({ passthrough: true }) res: Response) {
@@ -48,19 +53,20 @@ export class UsersController {
     return { accessToken, roles, user };
   }
 
-  @Get('testdb')
-  testDb() {
-    console.log('Testing database connection...');
-    const data = this.usersService.testDb();
-    return data;
+  @Patch('update-profile')
+  @UseGuards(AuthGuard)
+  async updateProfile(@Req() req: Request, @Body() updateUserDto: UpdateUserDto) {
+    const user = req['user']; // Access the user info attached by AuthGuard
+    const updatedUser = await this.usersService.updateUserProfile(user.sub, updateUserDto);
+    return { data: updatedUser, message: 'User profile updated successfully' };
   }
-
 
   @Get('profile')
   @UseGuards(AuthGuard) // Use your AuthGuard here
-  getProfile(@Req() req: Request) {
+  async getProfile(@Req() req: Request) {
     const user = req['user']; // Access the user info attached by AuthGuard
-    const data = this.usersService.getUserById(user.userId);
+    console.log('User profile:', user);
+    const data = await this.usersService.getUserById(user.sub);
     return { data };
   }
 
@@ -83,6 +89,8 @@ export class UsersController {
     console.log("Trong Controller: ", userId, refreshToken);
     return { accessToken, roles };
   }
+
+
 
   @Post('logout')
   @UseGuards(AuthGuard) // Ensure the user is authenticated

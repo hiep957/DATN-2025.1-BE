@@ -15,6 +15,8 @@ import { Size } from 'src/common/entities/size.entity';
 import { count } from 'console';
 import { QueryProductDto } from './dto/search-product.dto';
 import { ProductImage } from 'src/common/entities/product-image.entity';
+import { priceMap } from 'src/common/utils/function_utils';
+import { min } from 'class-validator';
 
 
 
@@ -400,14 +402,16 @@ export class ProductsService {
         }
         return variant.quantity > 0 ? 1 : 0;
     }
+
+
+
     //https://gemini.google.com/app/3110b823d92149b0?android-min-version=301356232&ios-min-version=322.0&is_sa=1&campaign_id=test_autosubmit&pt=9008&mt=8&_gl=1*1ls3lvc*_gcl_au*NDczMDMwMDc1LjE3NTc4MDk4NDQuNTgxMTA1OTYwLjE3NTc4MDk5NzIuMTc1NzgwOTk3MQ..
     async findAll(query: QueryProductDto) {
         const {
             q,
             category,
             brand,
-            minPrice,
-            maxPrice,
+            prices,
             colors,
             sizes,
             sortBy,
@@ -415,9 +419,22 @@ export class ProductsService {
             page = 1,
             limit = 10,
         } = query;
+
+        let minPrice = Infinity;
+        let maxPrice = 0;
+        if (prices) {
+            const range = priceMap[prices];
+            if (range) {
+                minPrice = Math.min(minPrice, range.minPrice);
+                maxPrice = Math.max(maxPrice, range.maxPrice);
+            }
+        }
+        console.log(minPrice, maxPrice);
+        if (minPrice === Infinity) minPrice = undefined as any;
         console.log('SearchProducts with query:', sizes);
         const sizeArray = sizes ? sizes.split(',') : [];
         const colorArray = colors ? colors.split(',') : [];
+        console.log(minPrice, maxPrice)
         const qb = this.productRepo.createQueryBuilder('product');
         qb.leftJoinAndSelect('product.category', 'category');
         qb.leftJoinAndSelect('product.brand', 'brand');
@@ -478,7 +495,7 @@ export class ProductsService {
             // Tạm thời để đơn giản, ta sẽ sort theo các trường của product
             qb.orderBy(`product.${sortBy}`, sortOrder);
         } else {
-            qb.orderBy(`product.${sortBy || 'created'}`, sortOrder || 'DESC');
+            qb.orderBy(`product.${sortBy || 'created'}`, sortOrder || 'ASC');
         }
 
         // 4. Phân trang
@@ -495,6 +512,20 @@ export class ProductsService {
             data: products
         };
 
+    }
+
+    async getProductVariants(productVariantId: string) {
+        const variant = await this.variantRepo.findOne({
+            where: { id: +productVariantId },
+            relations: {
+                color: true,
+                size: true,
+            }
+        });
+        if (!variant) {
+            throw new BadRequestException('Product variant not found');
+        }
+        return variant;
     }
 
 

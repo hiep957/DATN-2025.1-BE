@@ -1,8 +1,16 @@
-import { IsNotEmpty } from 'class-validator';
+import { IsNotEmpty, IsOptional } from 'class-validator';
 export class CreateCartDto {
+    @IsOptional()
     variantId?: number;
+    @IsOptional()
     quantity?: number;
-    userId: number; // Chưa làm bảo mật nên để tạm thời, mấy nữa sẽ lấy từ token
+    @IsOptional()
+    productId?: number;
+    @IsOptional()
+    productName?: string;
+    @IsOptional()
+    productImage?: string;
+
 }
 
 export class AddItemDto {
@@ -10,8 +18,12 @@ export class AddItemDto {
     variantId: number;
     @IsNotEmpty()
     quantity: number;
-
-    userId?: number; // Chưa làm bảo mật nên để tạm thời, mấy nữa sẽ lấy từ token
+    @IsNotEmpty()
+    productId: number;
+    @IsNotEmpty()
+    productName: string;
+    @IsOptional()
+    productImage?: string;
 }
 
 
@@ -20,8 +32,21 @@ export class DecreaseItemDto {
     variantId: number;
     @IsNotEmpty()
     quantity: number;
+   
+}
 
-    userId?: number; // Chưa làm bảo mật nên để tạm thời, mấy nữa sẽ lấy từ token
+export class MergeCartDto {
+    @IsNotEmpty()
+    variantId: number;
+    @IsNotEmpty()
+    quantity: number
+    @IsNotEmpty()
+    productId: number;
+    @IsNotEmpty()
+    productName: string;
+    @IsOptional()
+    productImage?: string;
+   
 }
 
 

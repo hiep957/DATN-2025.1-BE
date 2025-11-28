@@ -11,4 +11,6 @@ export class Size {
 
   @Column({ length: 64 })
   name: string;       // "Size S", "Size 37", ...
+
+  
 }

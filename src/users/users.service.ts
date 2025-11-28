@@ -16,6 +16,7 @@ import { Role } from './entities/role.entity';
 import { TokenService } from './token.service';
 import { PasswordService } from './password.service';
 import { EmailService } from 'src/common/utils/email.service';
+import { QueuryUserDto } from './dto/query-user.dto';
 
 @Injectable()
 export class UsersService {
@@ -101,6 +102,24 @@ export class UsersService {
     return user;
   }
 
+  async updateUserProfile(userId: number, updateUserDto: UpdateUserDto) {
+    console.log('Updating user profile:', updateUserDto, 'for user ID:', userId);
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+    }
+    const { username, avatar, phoneNumber, birthday, gender, address, occupation } = updateUserDto;
+    if (username !== undefined) user.username = username;
+    if (avatar !== undefined) user.avatar = avatar;
+    if (phoneNumber !== undefined) user.phoneNumber = phoneNumber;
+    if (birthday !== undefined) user.birthday = birthday;
+    if (gender !== undefined) user.gender = gender
+    if (address !== undefined) user.address = address;
+    if (occupation !== undefined) user.occupation = occupation;
+    await this.userRepository.save(user);
+    return user;
+  }
+
 
   async refresh(userId: number, refreshToken: string) {
     const user = await this.userRepository.findOne({
@@ -142,7 +161,9 @@ export class UsersService {
   }
 
   async getUserById(id: number) {
-    return await this.userRepository.findOne({ where: { id } });
+    const user = await this.userRepository.findOne({ where: { id } });
+    if (!user) throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+    return user;
   }
 
   async requestPasswordReset(email: string) {
@@ -162,6 +183,28 @@ export class UsersService {
       throw new HttpException('Failed to send OTP email', HttpStatus.INTERNAL_SERVER_ERROR);
     }
     return { otp_code };
+  }
+
+
+  async getUser(query: QueuryUserDto) {
+    const { q, role, sortBy, sortOrder, page = 1, limit = 10 } = query;
+    const qb = this.userRepository.createQueryBuilder('user');
+    qb.leftJoinAndSelect('user.userRoles', 'userRole')
+      .leftJoinAndSelect('userRole.role', 'role');
+
+    if (q) {
+      qb.andWhere('user.username LIKE :q OR user.email LIKE :q', { q: `%${q}%` });
+    }
+    if (role) {
+      qb.andWhere('role.code = :role', { role });
+    }
+    if (sortBy) {
+      const order = sortOrder === 'DESC' ? 'DESC' : 'ASC';
+      qb.orderBy(`user.${sortBy}`, order);
+    }
+    qb.skip((page - 1) * limit).take(limit);
+    const [data, total] = await qb.getManyAndCount();
+    return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
   }
 
 

@@ -5,6 +5,7 @@ import { Brand } from './brand.entity';
 import { Category } from './category.entity';
 import { ProductVariant } from './product-variant.entity';
 import { ProductImage } from './product-image.entity';
+import { Review } from './review.entity';
 
 
 // 1 note quan trọng, có cả mảng Product
@@ -23,7 +24,7 @@ export class Product {
 
   @Column({ type: 'text', nullable: true })
   description?: string;
-  
+
   @ManyToOne(() => Category, (c) => c.products, { onDelete: 'SET NULL', nullable: true })
   category?: Category;
 
@@ -35,6 +36,8 @@ export class Product {
 
   @CreateDateColumn()
   created: Date;
+  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  updated: Date;
 
   // Thuộc tính chung của sản phẩm (Postgres JSONB)
   @Column({ type: 'jsonb', nullable: true })
@@ -47,6 +50,10 @@ export class Product {
   @OneToMany(() => ProductVariant, (v) => v.product, { cascade: true })
   variants: ProductVariant[];
 
-  @OneToMany(() => ProductImage, (img) => img.product, { cascade: true})
+  @OneToMany(() => ProductImage, (img) => img.product, { cascade: true })
   images: ProductImage[];
+
+  @OneToMany(() => Review, (review) => review.product)
+  reviews: Review[];
 }
+

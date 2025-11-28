@@ -65,5 +65,10 @@ export class ProductsController {
     return { available: result };
   }
 
+  @Get('/variants/:variantId')
+  getProductVariantById(@Param('variantId') variantId: string) {
+    return this.productsService.getProductVariants(variantId);
+  }
+
 
 }

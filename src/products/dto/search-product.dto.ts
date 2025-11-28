@@ -15,15 +15,14 @@ export class QueryProductDto {
   @IsString()
   brand?: string;
 
-  @IsOptional()
-  @IsNumber()
-  @Transform(({ value }) => parseInt(value))
-  minPrice?: number;
+  // @IsOptional()
+  // @IsNumber()
+  // @Transform(({ value }) => parseInt(value))
+  // minPrice?: number;
 
   @IsOptional()
-  @IsNumber()
-  @Transform(({ value }) => parseInt(value))
-  maxPrice?: number;
+  @IsString()
+  prices?: string;
 
   // Mảng id
   @IsOptional()

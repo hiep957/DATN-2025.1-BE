@@ -1,12 +1,21 @@
-import { Column, CreateDateColumn, Entity, PrimaryColumn, OneToMany, PrimaryGeneratedColumn, OneToOne } from "typeorm";
+import { Column, CreateDateColumn, Entity, PrimaryColumn, OneToMany, PrimaryGeneratedColumn, OneToOne, UpdateDateColumn } from "typeorm";
 import { RefreshToken } from "./refresh-token.entity";
 import { UserRole } from "./user-role.entity";
 import { Cart } from "src/common/entities/cart.entity";
+import { Order } from "src/common/entities/order.entity";
+import { Review } from "src/common/entities/review.entity";
 
 @Entity()
 export class User {
     @PrimaryGeneratedColumn()
     id: number;
+
+
+    @Column({
+        type: 'varchar',
+        unique: true
+    })
+    email: string;
 
     @Column({
         type: 'varchar',
@@ -23,9 +32,43 @@ export class User {
 
     @Column({
         type: 'varchar',
-        unique: true
+        nullable: true,
     })
-    email: string;
+    address: string;
+
+    // số điện thoại
+    @Column({
+        type: 'varchar',
+        nullable: true,
+    })
+    phoneNumber: string;
+
+    @Column({
+        type: 'varchar',
+        nullable: true
+    })
+    birthday: string;
+
+    //Giới tính
+    @Column({
+        type: 'varchar',
+        nullable: true
+    })
+    gender: string;
+
+
+    @Column({
+        type: 'varchar',
+        nullable: true
+    })
+    occupation: string;
+
+    @Column({
+        default: "https://github.com/shadcn.png",
+        type: 'varchar',
+        nullable: true
+    })
+    avatar: string;
 
     // 1 User <-> 1 Cart
     @OneToOne(() => Cart, (cart) => cart.user)
@@ -37,13 +80,24 @@ export class User {
     @OneToMany(() => UserRole, ur => ur.user, { cascade: true })
     userRoles: UserRole[];
 
+    // Một User có thể có NHIỀU Order
+    @OneToMany(
+        () => Order,
+        (order) => order.user // 'user' là tên thuộc tính @ManyToOne bên Order
+    )
+    orders: Order[]; // Đây là thuộc tính để truy cập mảng Order từ User
+
     @CreateDateColumn({
         comment: 'The date when the user was created',
     })
     createdAt: Date;
-    @CreateDateColumn({
+    @UpdateDateColumn({
         comment: 'The date when the user was last updated',
     })
     updatedAt: Date;
+
+    // 1 User -> N Review
+    @OneToMany(() => Review, (review) => review.user)
+    reviews: Review[];
 
 }

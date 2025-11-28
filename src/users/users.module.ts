@@ -13,9 +13,10 @@ import { OPTIONAL_DEPS_METADATA } from '@nestjs/common/constants';
 import { Otp } from 'src/common/entities/otp.entity';
 import { PasswordService } from './password.service';
 import { EmailService } from 'src/common/utils/email.service';
+import { Review } from 'src/common/entities/review.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([User, RefreshToken, Role, UserRole, Otp]),
+  imports: [TypeOrmModule.forFeature([User, RefreshToken, Role, UserRole, Otp, Review]),
   // Add any other modules that are needed, e.g., AuthModule, if applicable
   JwtModule.register({
     global: true,

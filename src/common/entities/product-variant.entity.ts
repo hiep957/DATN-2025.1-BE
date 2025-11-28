@@ -35,7 +35,11 @@ export class ProductVariant {
 
   @ManyToOne(() => Size, { eager: true, onDelete: 'RESTRICT' })
   size: Size;
-  
+
+  //sản phẩm đã bán được
+  @Column({ type: 'int', default: 0 })
+  sold: number;
+
   @OneToMany(() => CartItem, (ci) => ci.variant)
   cartItems: CartItem[];
 

@@ -25,6 +25,15 @@ import { UploadController } from './common/utils/upload.controller';
 import { ConfigModule } from '@nestjs/config';
 import { Otp } from './common/entities/otp.entity';
 
+import { PaymentModule } from './payment/payment.module';
+import { TestModule } from './test/test.module';
+import { Order } from './common/entities/order.entity';
+import { OrderItem } from './common/entities/order-item.entity';
+import { Review } from './common/entities/review.entity';
+import { ReviewModule } from './review/review.module';
+import { ChatModule } from './chat/chat.module';
+
+
 
 @Module({
   imports: [
@@ -40,9 +49,10 @@ import { Otp } from './common/entities/otp.entity';
       // logging: true,
       database: 'shopdb',
       entities: [User, RefreshToken, UserRole, Role,
-        Category, Brand, Color,Size, Product,  ProductVariant, ProductImage, Cart, CartItem,Otp],
+        Category, Brand, Color,Size, Product,  ProductVariant, ProductImage, Cart, CartItem,Otp, Order, OrderItem, Review],
     }),
-    ProductsModule, CategoryModule, CartsModule
+    ProductsModule, CategoryModule, CartsModule, PaymentModule, TestModule, ReviewModule, ChatModule
+    
   ],
   controllers: [AppController, UploadController],
   providers: [AppService],

@@ -1,44 +1,48 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req } from '@nestjs/common';
 import { CartsService } from './carts.service';
-import { AddItemDto, CreateCartDto, DecreaseItemDto } from './dto/create-cart.dto';
+import { AddItemDto, CreateCartDto, DecreaseItemDto, MergeCartDto } from './dto/create-cart.dto';
 import { UpdateCartDto } from './dto/update-cart.dto';
+import { AuthGuard } from 'src/common/guards/auth.guard';
+import { Request } from 'express';
 
 @Controller('carts')
 export class CartsController {
-  constructor(private readonly cartsService: CartsService) {}
+  constructor(private readonly cartsService: CartsService) { }
 
   @Post('/get-cart')
-  create(@Body() createCartDto: CreateCartDto) {
-    return this.cartsService.create(createCartDto);
+  @UseGuards(AuthGuard)
+  create(@Body() createCartDto: CreateCartDto, @Req() req: Request) {
+    const user = req['user']; // Access the user info attached by AuthGuard
+    console.log("User info from token:", user);
+    return this.cartsService.create(createCartDto, user.sub);
   }
 
   @Post('/add-item')
-  addItemToCart(@Body() addItemDto: AddItemDto) {
-    return this.cartsService.addItemToCart(addItemDto);
+  @UseGuards(AuthGuard)
+  addItemToCart(@Body() addItemDto: AddItemDto, @Req() req: Request) {
+    const user = req['user']; // Access the user info attached by AuthGuard
+    return this.cartsService.addItemToCart(addItemDto, user.sub);
   }
 
   @Post('/decrease-item')
-  decreaseItemQuantity(@Body() decreaseItemDto: DecreaseItemDto) {
-    return this.cartsService.decreaseItemQuantity(decreaseItemDto);
+  @UseGuards(AuthGuard)
+  decreaseItemQuantity(@Body() decreaseItemDto: DecreaseItemDto, @Req() req: Request) {
+    const user = req['user']; // Access the user info attached by AuthGuard
+    return this.cartsService.decreaseItemQuantity(decreaseItemDto, user.sub);
   }
 
-  @Get()
-  findAll() {
-    return this.cartsService.findAll();
+  @Post('/merge-cart')
+  @UseGuards(AuthGuard)
+  mergeCart(@Body() mergeCartDto: MergeCartDto[], @Req() req: Request) {
+    const user = req['user']; // Access the user info attached by AuthGuard
+    return this.cartsService.mergeCart(mergeCartDto, user.sub);
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.cartsService.findOne(+id);
-  }
+  // @Post('/remove-item')
+  // // @UseGuards(AuthGuard)
+  // removeItemFromCart() {
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateCartDto: UpdateCartDto) {
-    return this.cartsService.update(+id, updateCartDto);
-  }
+  //   return this.cartsService.removeItemFromCart(89, 8);
+  // }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.cartsService.remove(+id);
-  }
 }
