@@ -185,6 +185,16 @@ export class UsersService {
     return { otp_code };
   }
 
+  async changePassword(email: string, oldPassword: string, newPassword: string) {
+    const user = await this.userRepository.findOne({ where: { email } });
+    if (!user) throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+    const isPasswordValid = await argon2.verify(user.password, oldPassword);
+    if (!isPasswordValid) throw new HttpException('Old password is incorrect', HttpStatus.BAD_REQUEST);
+    user.password = await argon2.hash(newPassword);
+    await this.userRepository.save(user);
+    return { message: 'Password changed successfully' };
+  }
+
 
   async getUser(query: QueuryUserDto) {
     const { q, role, sortBy, sortOrder, page = 1, limit = 10 } = query;

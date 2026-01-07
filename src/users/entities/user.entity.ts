@@ -1,9 +1,10 @@
 import { Column, CreateDateColumn, Entity, PrimaryColumn, OneToMany, PrimaryGeneratedColumn, OneToOne, UpdateDateColumn } from "typeorm";
 import { RefreshToken } from "./refresh-token.entity";
 import { UserRole } from "./user-role.entity";
-import { Cart } from "src/common/entities/cart.entity";
+import { Cart } from "../../common/entities/cart.entity";
 import { Order } from "src/common/entities/order.entity";
 import { Review } from "src/common/entities/review.entity";
+import { ChatSession } from "src/common/entities/chat-session";
 
 @Entity()
 export class User {
@@ -99,5 +100,8 @@ export class User {
     // 1 User -> N Review
     @OneToMany(() => Review, (review) => review.user)
     reviews: Review[];
+
+    @OneToOne(() => ChatSession, (chatSession) => chatSession.user)
+    chatSession: ChatSession;
 
 }

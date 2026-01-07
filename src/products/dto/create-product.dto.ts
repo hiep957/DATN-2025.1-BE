@@ -16,9 +16,7 @@ export class CreateProductImageDto {
 }
 
 export class CreateProductVariantDto {
-  @IsString()
-  sku: string;
-
+  
   @IsNumber()
   @Min(0)
   price: number;

@@ -119,4 +119,12 @@ export class UsersController {
     const user = await this.passwordService.updatePassword(email, newPassword);
     return { data: user, message: 'Password updated successfully' };
   }
+
+  @Post('change-password')
+  @UseGuards(AuthGuard)
+  async changePassword(@Req() req: Request, @Body('oldPassword') oldPassword: string, @Body('newPassword') newPassword: string) {
+    const user = req['user'];
+    const result = await this.usersService.changePassword(user.email, oldPassword, newPassword);
+    return { data: result, message: 'Password changed successfully' };
+  }
 }

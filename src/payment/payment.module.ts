@@ -11,10 +11,18 @@ import { Product } from 'src/common/entities/product.entity';
 import { User } from 'src/users/entities/user.entity';
 import { CartsService } from 'src/carts/carts.service';
 import { CartsModule } from 'src/carts/carts.module';
+import { PaymentStrategyFactory } from './payment.factory';
+import { CodStrategy } from './strategies/cod.strategy';
+import { VnPayStrategy } from './strategies/vnpay.strategy';
+import { SepayStrategy } from './strategies/sepay.strategy';
 
 @Module({
-  imports: [NestVnpayModule,TypeOrmModule.forFeature([Order, OrderItem, ProductVariant, Product, User]),CartsModule],
+  imports: [NestVnpayModule, TypeOrmModule.forFeature([Order, OrderItem, ProductVariant, Product, User]), CartsModule],
   controllers: [PaymentController],
-  providers: [PaymentService],
+  providers: [PaymentService, PaymentStrategyFactory,
+    CodStrategy,
+    VnPayStrategy,
+    SepayStrategy
+  ],
 })
 export class PaymentModule { }

@@ -22,7 +22,7 @@ import { Cart } from './common/entities/cart.entity';
 import { CartItem } from './common/entities/cart-item.entity';
 import { CartsModule } from './carts/carts.module';
 import { UploadController } from './common/utils/upload.controller';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { Otp } from './common/entities/otp.entity';
 
 import { PaymentModule } from './payment/payment.module';
@@ -32,6 +32,9 @@ import { OrderItem } from './common/entities/order-item.entity';
 import { Review } from './common/entities/review.entity';
 import { ReviewModule } from './review/review.module';
 import { ChatModule } from './chat/chat.module';
+import { DashboardModule } from './dashboard/dashboard.module';
+import { ChatSession } from './common/entities/chat-session';
+import { ChatMessage } from './common/entities/chat-message';
 
 
 
@@ -39,20 +42,43 @@ import { ChatModule } from './chat/chat.module';
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     UsersModule,
-    TypeOrmModule.forRoot({
-      type: 'postgres',
-      host: 'localhost',
-      port: 5432,
-      username: 'postgres',
-      password: 'hieplaso1',
-      synchronize: true,
-      // logging: true,
-      database: 'shopdb',
-      entities: [User, RefreshToken, UserRole, Role,
-        Category, Brand, Color,Size, Product,  ProductVariant, ProductImage, Cart, CartItem,Otp, Order, OrderItem, Review],
+    TypeOrmModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        type: 'postgres',
+        host: config.get<string>('DB_HOST', 'localhost'),
+        port: parseInt(config.get<string>('DB_PORT', '5432')),
+        username: config.get<string>('DB_USERNAME', 'postgres'),
+        password: config.get<string>('DB_PASSWORD', ''),
+        database: config.get<string>('DB_NAME', 'shopdb'),
+        entities: [
+          User,
+          RefreshToken,
+          UserRole,
+          Role,
+          Category,
+          Brand,
+          Color,
+          Size,
+          Product,
+          ProductVariant,
+          ProductImage,
+          Cart,
+          CartItem,
+          Otp,
+          Order,
+          OrderItem,
+          Review,
+          ChatSession,
+          ChatMessage
+        ],
+        // nên tắt ở production
+        synchronize: true,
+        logging: config.get<string>('DB_LOGGING', 'false') === 'true',
+      }),
     }),
-    ProductsModule, CategoryModule, CartsModule, PaymentModule, TestModule, ReviewModule, ChatModule
-    
+    ProductsModule, CategoryModule, CartsModule, PaymentModule, TestModule, ReviewModule, ChatModule, DashboardModule
+
   ],
   controllers: [AppController, UploadController],
   providers: [AppService],

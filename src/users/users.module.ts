@@ -14,6 +14,7 @@ import { Otp } from 'src/common/entities/otp.entity';
 import { PasswordService } from './password.service';
 import { EmailService } from 'src/common/utils/email.service';
 import { Review } from 'src/common/entities/review.entity';
+import { ChatSession } from 'src/common/entities/chat-session';
 
 @Module({
   imports: [TypeOrmModule.forFeature([User, RefreshToken, Role, UserRole, Otp, Review]),
@@ -23,6 +24,6 @@ import { Review } from 'src/common/entities/review.entity';
   })
   ],
   controllers: [UsersController],
-  providers: [UsersService, TokenService, PasswordService, EmailService],
+  providers: [UsersService, TokenService, PasswordService, EmailService, ChatSession],
 })
 export class UsersModule { }

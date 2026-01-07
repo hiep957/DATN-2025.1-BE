@@ -9,6 +9,10 @@ import { AuthGuard } from 'src/common/guards/auth.guard';
 export class PaymentController {
   constructor(private readonly paymentService: PaymentService) { }
 
+  @Post('/create-payment')
+  async createPayment(@Body() body: { type: 'COD' | 'VNPAY'; orderId: string; amount: number }) {
+    return this.paymentService.createPayment(body.type, body.orderId, body.amount);
+  }
 
   @Post('/user-orders')
   @UseGuards(AuthGuard)
@@ -42,6 +46,12 @@ export class PaymentController {
     return this.paymentService.createPaymentLink(createPaymentLinkDto);
   }
 
+  @Post('/create-sepay-payment-link')
+  async createSepayPaymentLink(@Body() createPaymentLinkDto: CreatePaymentLinkDto) {
+    console.log('Creating Sepay payment link');
+    return this.paymentService.createPaymentLinkBySepay(createPaymentLinkDto);
+  }
+
   @Post('/process-cod')
   async processCod(@Body() body: { orderId: string; userId: string }) {
 
@@ -51,8 +61,21 @@ export class PaymentController {
   }
 
 
+  @Post('/sepay-ipn')
+  async sepayIpn(
+    @Body() body: any,
+  ) {
+    
 
-  @Get('/vnpay-ipn')
+    // 2) Xử lý event
+    await this.paymentService.handleSepayIpn(body);
+
+    // 3) ACK cho SePay
+    return { success: true };
+  }
+
+
+  @Post('/vnpay-ipn')
   async vnpayIpn(@Query() query: Record<string, any>, @Res() res: Response) {
     console.log('VNPAY IPN Request:', query);
     const result = await this.paymentService.handleVnpayIpn(query);

@@ -15,8 +15,16 @@ import { OrderStatus, PaymentMethod, PaymentStatus } from 'src/common/utils/type
 import { User } from 'src/users/entities/user.entity';
 import { CartsService } from 'src/carts/carts.service';
 import { QueryOrdersDto } from './dto/query-orders.dto';
+import { SePayPgClient } from 'sepay-pg-node';
+import { PaymentStrategyFactory } from './payment.factory';
+
 @Injectable()
 export class PaymentService {
+  private client = new SePayPgClient({
+    env: 'production',
+    merchant_id: 'SP-LIVE-HMAB9B89',
+    secret_key: 'spsk_live_XFme4sB9CCvuboBPkoEJ9jDPpq2YSLUf'
+  });
   constructor(
     @InjectRepository(Order)
     private readonly orderRepository: Repository<Order>,
@@ -29,7 +37,69 @@ export class PaymentService {
     @InjectRepository(ProductVariant)
     private readonly productVariantRepository: Repository<ProductVariant>,
     private readonly cartsService: CartsService,
+    private readonly paymentFactory: PaymentStrategyFactory
   ) { }
+
+  async createPayment(type: 'COD' | 'SEPAY' | 'VNPAY', orderId: string, amount: number) {
+    // Bước 1: Lấy chiến lược phù hợp
+    const strategy = this.paymentFactory.getStrategy(type);
+
+    // Bước 2: Thực thi (Đa hình)
+    return strategy.processPayment(orderId, amount);
+  }
+
+  async handleSepayIpn(data: any) {
+    console.log('Received Sepay IPN data:', data);
+    const type = data?.notification_type;
+
+    if (type !== 'ORDER_PAID') {
+      // ignore các event khác (hoặc log)
+      return;
+    }
+    const orderId = data.order.order_invoice_number;
+    if (!orderId) {
+      return new BadRequestException('Missing order ID in Sepay IPN data');
+    }
+
+    const order = await this.orderRepository.findOne({
+      where: { id: orderId },
+      relations: ['orderItems', 'user'],
+    })
+
+    if (!order) {
+      console.error('IPN: Order not found', { orderId });
+      throw new BadRequestException('Order not found');
+    }
+    console.log("Order found:", order);
+    //update order payment status
+
+    order.payment_status = PaymentStatus.PAID;
+
+    //Trừ sản phẩm đã bán
+    const variantIds = order.orderItems.map(item => item.productVariantId);
+    for (const variantId of variantIds) {
+      const variant = await this.productVariantRepository.findOne({
+        where: { id: variantId }
+      })
+      if (!variant) throw new BadRequestException('Product variant not found');
+      variant.sold += order.orderItems
+        .filter(item => item.productVariantId === variantId)
+        .reduce((sum, item) => sum + item.quantity, 0);
+      await this.productVariantRepository.save(variant);
+
+      variant.quantity -= order.orderItems
+        .filter(item => item.productVariantId === variantId)
+        .reduce((sum, item) => sum + item.quantity, 0);
+      await this.productVariantRepository.save(variant);
+      if (variant.quantity < 0) {
+        variant.quantity = 0;
+        await this.productVariantRepository.save(variant);
+      }
+      await this.cartsService.removeItemFromCart(variantId, Number(order.user?.id));
+    }
+    await this.orderRepository.save(order);
+
+  }
 
   async createOrder(dto: CreateOrderDto): Promise<Order> {
     const { userId, customer_name, customer_phone,
@@ -99,8 +169,8 @@ export class PaymentService {
     const date = new Date();
     const createDate = dayjs(date).format('YYYYMMDDHHmmss');
 
-    const tmnCode = "D60V4S7J"
-    const secretKey = "2CFOV2CVFT8V3TAGQBOQ33ZOCEJ7EUVT"
+    const tmnCode = "1QQJHY7E"
+    const secretKey = "LIZO8N5JJ2LT0SY9O56YI3RXN6318TEU"
     const vnpUrl = "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html"
     const returnUrl = "http://localhost:8000/payment"
     const bankCode = "NCB"
@@ -147,9 +217,25 @@ export class PaymentService {
     return { paymentUrl, orderId };
   }
 
+
+  async createPaymentLinkBySepay(createPaymentLinkDto: CreatePaymentLinkDto) {
+    const fields = this.client.checkout.initOneTimePaymentFields({
+      operation: 'PURCHASE',
+      payment_method: 'BANK_TRANSFER',
+      order_invoice_number: String(createPaymentLinkDto.orderId),
+      order_amount: 2000,
+      currency: 'VND',
+      order_description: `Payment for ORDER${createPaymentLinkDto.orderId}`,
+    })
+    console.log('Payment Link from Sepay:', fields);
+    const checkoutUrl = this.client.checkout.initCheckoutUrl();
+    console.log('Checkout URL:', checkoutUrl);
+    return { checkoutUrl, fields };
+  }
+
   async handleVnpayIpn(query: Record<string, any>) {
     // Lấy secretKey từ config (phải giống hệt lúc tạo link)
-    const secretKey = "2CFOV2CVFT8V3TAGQBOQ33ZOCEJ7EUVT";
+    const secretKey = "LIZO8N5JJ2LT0SY9O56YI3RXN6318TEU";
 
     // Lấy các tham số từ query
     const vnp_SecureHash = query['vnp_SecureHash'];
@@ -324,8 +410,11 @@ export class PaymentService {
       where: { user: { id: Number(userId) } },
       relations: ['orderItems', 'user'],
     });
-    
+
     return orders;
   }
+
+
+
 
 }

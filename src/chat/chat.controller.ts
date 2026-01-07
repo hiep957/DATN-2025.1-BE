@@ -1,35 +1,35 @@
 import { ChatService } from './chat.service';
-import { Controller, Post, Body, Res } from '@nestjs/common';
+import { Controller, Post, Body, Res, Req, UseGuards } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { Response } from 'express'; // Lưu ý import từ express
 import { firstValueFrom } from 'rxjs'
+import { AuthGuard } from 'src/common/guards/auth.guard';
 @Controller('chat')
 export class ChatController {
   constructor(
-    private readonly httpService: HttpService
+    private readonly chatService: ChatService
   ) { }
   @Post('ask')
-  async ask(@Body() body: { question: string }, @Res() res: Response) {
-    const pythonApiUrl = 'https://unpolitely-multihued-jaydon.ngrok-free.dev/chat_stream';
+  @UseGuards(AuthGuard)
+  async ask(
+    @Body() body: { question: string },
+    @Req() req: Request,
+    @Res() res: Response,
+  ) {
+    // TODO: Lấy userId từ auth. Tạm thời mock cứng nếu bạn chưa có:
+    // const userId = 1;
 
-    try {
-      // 1. Gọi sang Python với responseType là 'stream'
-      const response = await this.httpService.axiosRef.post(
-        pythonApiUrl,
-        { question: body.question },
-        { responseType: 'stream' } // Quan trọng!
-      );
+    const user = req['user']; // Access the user info attached by AuthGuard
 
-      // 2. Thiết lập Header để Frontend biết đây là text stream
-      res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-      res.setHeader('Transfer-Encoding', 'chunked');
-
-      // 3. Pipe (nối ống) dữ liệu trực tiếp từ Python xuống Client
-      response.data.pipe(res);
-
-    } catch (error) {
-      console.error('Error calling Python Service:', error);
-      res.status(500).json({ message: 'Lỗi kết nối tới AI Service' });
-    }
+    return this.chatService.askStreaming(user.sub, body.question, res);
+  }
+  @Post('/history')
+  @UseGuards(AuthGuard)
+  async history(
+    @Req() req: Request,
+  ) {
+    const user = req['user']; // Access the user info attached by AuthGuard
+    console.log("Fetching chat history for user:", user.sub);
+    return this.chatService.getChatByUser(user.sub);
   }
 }

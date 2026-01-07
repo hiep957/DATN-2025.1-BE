@@ -44,22 +44,15 @@ export class ProductsService {
     async create(createProductDto: CreateProductDto) {
         console.log(createProductDto);
         return this.dataSource.transaction(async (manager) => {
-            console.log(createProductDto);
+           
             const category = await manager.findOne(Category, {
                 where: { id: createProductDto.categoryId }
             })
             if (!category) {
                 throw new BadRequestException('Category not found');
             }
-            const brand = await manager.findOne(Brand, {
-                where: { id: createProductDto.brandId }
-            })
-            if (!brand) {
-                throw new BadRequestException('Brand not found');
-            }
-
-
-
+            console.log('Creating product in category:', category);
+          
             // Tìm sản phẩm trùng tên
             const existingProduct = await manager.findOne(Product, {
                 where: { name: createProductDto.name }
@@ -67,6 +60,7 @@ export class ProductsService {
             if (existingProduct) {
                 throw new BadRequestException('Product name already exists');
             }
+            console.log('No duplicate product name found, proceeding to create.');
 
 
             const product = manager.create(Product, {
@@ -74,13 +68,11 @@ export class ProductsService {
                 slug: createProductDto.slug,
                 description: createProductDto.description,
                 category,
-                brand,
-                specs: createProductDto.specs,
                 image_colors: createProductDto.image_colors,
                 is_published: true
             })
             await manager.save(product);
-
+            console.log('Created product:', product);
             if (createProductDto.images) {
                 for (const img of createProductDto.images) {
                     const productImage = manager.create('ProductImage', {
@@ -97,7 +89,6 @@ export class ProductsService {
 
 
                 const variant = manager.create('ProductVariant', {
-                    sku: v.sku,
                     price: v.price,
                     compare_at_price: v.compare_at_price,
                     quantity: v.quantity,
@@ -115,8 +106,7 @@ export class ProductsService {
                 relations: {
                     brand: true,
                     category: true,
-                    variants: { color: true, size: true },
-
+                    variants: { color: true, size: true }
                 }
             });
 
@@ -134,7 +124,6 @@ export class ProductsService {
                 relations: {
                     variants: {},
                     category: true,
-                    brand: true,
                     images: true,
                 },
             });
@@ -146,7 +135,6 @@ export class ProductsService {
             if (dto.slug !== undefined) product.slug = dto.slug;
             if (dto.description !== undefined) product.description = dto.description ?? null;
             if (dto.is_published !== undefined) product.is_published = !!dto.is_published;
-            if (dto.specs !== undefined) product.specs = dto.specs ?? null;
             if (dto.image_colors !== undefined) product.image_colors = dto.image_colors ?? null;
 
             // 3. cập nhật category
@@ -158,15 +146,7 @@ export class ProductsService {
                 }
             }
 
-            // 4) Cập nhật brand
-            if (dto.brandId !== undefined) {
-                if (dto.brandId === null) {
-                    product.brand = undefined;
-                } else {
-                    product.brand = await manager.findOneByOrFail(Brand, { id: dto.brandId });
-                }
-            }
-
+          
             await manager.save(product);
 
 
@@ -177,11 +157,9 @@ export class ProductsService {
 
                 // map nhanh: theo id và sku
                 const byId = new Map<number, ProductVariant>();
-                const bySku = new Map<string, ProductVariant>();
 
                 for (const v of existingVariants) {
                     if (v.id) byId.set(v.id, v);
-                    if (v.sku) bySku.set(v.sku, v);
                 }
 
                 // Đánh dấu biến thể còn/không còn trong payload
@@ -192,19 +170,16 @@ export class ProductsService {
                     if (incoming._destroy) {
                         let toDelete: ProductVariant | undefined;
                         if (incoming.id) toDelete = byId.get(incoming.id);
-                        else if (incoming.sku) toDelete = bySku.get(incoming.sku);
                         if (toDelete) {
                             console.log('Delete variant', toDelete.id, toDelete);
                             await manager.remove(ProductVariant, toDelete);
                             byId.delete(toDelete.id);
-                            bySku.delete(toDelete.sku);
                         }
                     }
 
                     // Tìm biến thể cũ theo id hoặc sku
                     let variant: ProductVariant | undefined;
                     if (incoming.id) variant = byId.get(incoming.id);
-                    else if (incoming.sku) variant = bySku.get(incoming.sku);
 
                     // Chuẩn hoá số
                     const toNumericString = (v: any) =>
@@ -236,12 +211,8 @@ export class ProductsService {
                         variant = await manager.save(variant);
                         // Cập nhật maps
                         byId.set(variant.id, variant);
-                        bySku.set(variant.sku, variant);
                     } else {
                         // Cập nhật trường cơ bản nếu có
-                        if (incoming.sku !== undefined && incoming.sku !== variant.sku) {
-                            variant.sku = incoming.sku; // có unique index -> có thể throw nếu trùng
-                        }
                         if (incoming.price !== undefined) {
                             variant.price = toNumericString(incoming.price) ?? variant.price;
                         }

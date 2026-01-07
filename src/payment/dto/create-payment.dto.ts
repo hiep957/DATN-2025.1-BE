@@ -8,3 +8,13 @@ export class CreatePaymentLinkDto {
     @IsNotEmpty()
     orderId: string;
 }
+
+
+export class CreatePaymentDto {
+    @IsNotEmpty()
+    paymentMethod: 'COD' | 'SEPAY' | 'VNPAY';
+    @IsNotEmpty()
+    orderId: string;
+    @IsNotEmpty()
+    amount: number;
+}

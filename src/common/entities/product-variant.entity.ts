@@ -14,10 +14,6 @@ export class ProductVariant {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Index({ unique: true })
-  @Column({ length: 255 })
-  sku: string;
-
   @Column({ type: 'numeric', precision: 12, scale: 2 })
   price: string;
 
