@@ -46,11 +46,19 @@ import { ChatMessage } from './common/entities/chat-message';
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
         type: 'postgres',
-        host: config.get<string>('DB_HOST', 'localhost'),
-        port: parseInt(config.get<string>('DB_PORT', '5432')),
-        username: config.get<string>('DB_USERNAME', 'postgres'),
-        password: config.get<string>('DB_PASSWORD', ''),
-        database: config.get<string>('DB_NAME', 'shopdb'),
+        host: "localhost",
+        port: 5432,
+        username: "postgres",
+        password: "hieplaso1",
+        database: "shopdb",
+        // url: "postgresql://neondb_owner:npg_LJG3fvSdMnU2@ep-floral-darkness-a1o7b8j2-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require",
+        // ssl: true,
+        // extra: {
+        //   ssl: {
+        //     rejectUnauthorized: false, // Cho phép kết nối kể cả khi chứng chỉ chưa được xác thực cục bộ (quan trọng với Neon)
+        //   },
+        // },
+        // 👆 HẾT ĐOẠN THÊM 👆
         entities: [
           User,
           RefreshToken,
@@ -74,7 +82,8 @@ import { ChatMessage } from './common/entities/chat-message';
         ],
         // nên tắt ở production
         synchronize: true,
-        logging: config.get<string>('DB_LOGGING', 'false') === 'true',
+        // logging: true,
+        // logging: config.get<string>('DB_LOGGING', 'false') === 'true',
       }),
     }),
     ProductsModule, CategoryModule, CartsModule, PaymentModule, TestModule, ReviewModule, ChatModule, DashboardModule

@@ -4,12 +4,16 @@ import { Category } from "src/common/entities/category.entity";
 import { Repository } from "typeorm";
 import { CreateCategoryDto } from "./dto/create-category.dto";
 import { UpdateCategoryDto } from "./dto/update-category.dto";
+import { Size } from "src/common/entities/size.entity";
+import { Color } from "src/common/entities/color.entity";
 
 
 @Injectable()
 export class CategoryService {
     constructor(
         @InjectRepository(Category) private categoryRepo: Repository<Category>,
+        @InjectRepository(Size) private sizeRepo: Repository<Size>,
+        @InjectRepository(Color) private colorRepo: Repository<Color>
     ) { }
 
     async create(dto: CreateCategoryDto): Promise<Category> {
@@ -75,6 +79,28 @@ export class CategoryService {
         console.log(updatedCategory);
         return updatedCategory;
     }
+
+
+    async createSize(code: string, name: string): Promise<Size> {
+        const exitingSize = await this.sizeRepo.findOneBy({ code });
+        if (exitingSize) {
+            throw new NotFoundException('Size này đã tồn tại');
+        }
+        const size = this.sizeRepo.create({ code, name });
+        return this.sizeRepo.save(size);
+    }
+
+    async createColor(code: string, name: string, englishName: string): Promise<Color> {
+        const exitingColor = await this.colorRepo.findOneBy({ code });
+        if (exitingColor) {
+            throw new NotFoundException('Màu này đã tồn tại');
+        }
+        const color = this.colorRepo.create({ code, name, englishName });
+        return this.colorRepo.save(color);
+    }
+
+
+
 
 
 }

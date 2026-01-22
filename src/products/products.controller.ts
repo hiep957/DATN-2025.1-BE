@@ -76,5 +76,10 @@ export class ProductsController {
     return this.productsService.getProductVariants(variantId);
   }
 
+  @Get('/top-best-seller/:categoryId')
+  async getTop5BestSellerByCategory(@Param('categoryId') categoryId: number) {
+    return this.productsService.getTop5BestSellerByCategory(categoryId);
+  }
+
 
 }

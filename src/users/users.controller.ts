@@ -17,8 +17,8 @@ import { QueuryUserDto } from './dto/query-user.dto';
 function setRefreshCookie(res: Response, token: string) {
   res.cookie(REFRESH_COOKIE_NAME, token, {
     httpOnly: true,
-    secure: false,     // production: true (HTTPS). Dev: có thể false nếu chưa có HTTPS
-
+    secure: true,     // production: true (HTTPS). Dev: có thể false nếu chưa có HTTPS
+    sameSite: 'none', // production: 'none'. Dev: 'lax' hoặc 'none' tùy cấu hình frontend
     maxAge: REFRESH_TOKEN_TTL_SEC * 1000,
 
   });
@@ -48,9 +48,9 @@ export class UsersController {
   async login(@Body() loginUserDto: LoginUserDto, @Res({ passthrough: true }) res: Response) {
     console.log(loginUserDto)
     const { accessToken, refreshToken, roles, user } = await this.usersService.login(loginUserDto);
-    setRefreshCookie(res, refreshToken);
-    console.log('Login data:', { accessToken, refreshToken, roles });
-    return { accessToken, roles, user };
+    // setRefreshCookie(res, refreshToken);
+    // console.log('Login data:', { accessToken, refreshToken, roles });
+    return { accessToken, roles, user, refreshToken };
   }
 
   @Patch('update-profile')
@@ -94,11 +94,12 @@ export class UsersController {
 
   @Post('logout')
   @UseGuards(AuthGuard) // Ensure the user is authenticated
-  @UseGuards(RefreshGuard)
   async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
-    const { userId } = (req as any).refresh as { userId: number };
+    console.log("Đang logout...");
+    const user = req['user'];
+    const userId = user.sub;
     await this.usersService.logout(userId);
-    res.clearCookie(REFRESH_COOKIE_NAME);
+    res.clearCookie(REFRESH_COOKIE_NAME)
     return { ok: true };
   }
 

@@ -8,13 +8,13 @@ import { TypeOrmExceptionFilter } from './common/interceptors/typeorm-exception.
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     cors: {
-      origin: 'http://localhost:8000',
+      origin: true,
       credentials: true,
     }
   });
 
   app.use(cookieParser());
-
+  
   app.useGlobalPipes(new ValidationPipe({
     whitelist: true,
     transform: true,

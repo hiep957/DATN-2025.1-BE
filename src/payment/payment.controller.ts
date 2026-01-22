@@ -4,6 +4,7 @@ import { CreatePaymentLinkDto } from './dto/create-payment.dto';
 import { CreateOrderDto } from './dto/order.dto';
 import { QueryOrdersDto } from './dto/query-orders.dto';
 import { AuthGuard } from 'src/common/guards/auth.guard';
+import { Roles } from 'src/common/decorators/role.decorator';
 
 @Controller('payment')
 export class PaymentController {
@@ -23,12 +24,16 @@ export class PaymentController {
   }
 
   @Get('/orders')
+  @UseGuards(AuthGuard)
+  @Roles('ADMIN')
   async getOrders(@Query() query: QueryOrdersDto) {
     console.log('Query Orders with params:', query);
     return this.paymentService.getOrders(query);
   }
 
   @Patch('/update-order-status/:orderId')
+  @UseGuards(AuthGuard)
+  @Roles('ADMIN')
   async updateOrderStatus(@Param('orderId') orderId: string, @Body() body: { status: string }) {
     console.log('Updating order status for orderId:', orderId, 'to status:', body.status);
     return this.paymentService.updateOrderStatus(orderId, body.status);
@@ -65,7 +70,6 @@ export class PaymentController {
   async sepayIpn(
     @Body() body: any,
   ) {
-    
 
     // 2) Xử lý event
     await this.paymentService.handleSepayIpn(body);

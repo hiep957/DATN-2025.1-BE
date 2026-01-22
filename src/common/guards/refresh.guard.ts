@@ -10,7 +10,7 @@ export class RefreshGuard implements CanActivate {
     const req = ctx.switchToHttp().getRequest();
     const token = req?.cookies?.['refreshToken'];
     if (!token) throw new UnauthorizedException('Missing refresh token');
-    console.log(token)
+    console.log("RefreshToken ở RefreshGuard là: ", token);
     try {   
       const payload = await this.jwt.verifyAsync(token, {
         secret: "hiep1234567890"

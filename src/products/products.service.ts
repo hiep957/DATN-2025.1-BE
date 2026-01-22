@@ -44,7 +44,7 @@ export class ProductsService {
     async create(createProductDto: CreateProductDto) {
         console.log(createProductDto);
         return this.dataSource.transaction(async (manager) => {
-           
+
             const category = await manager.findOne(Category, {
                 where: { id: createProductDto.categoryId }
             })
@@ -52,7 +52,7 @@ export class ProductsService {
                 throw new BadRequestException('Category not found');
             }
             console.log('Creating product in category:', category);
-          
+
             // Tìm sản phẩm trùng tên
             const existingProduct = await manager.findOne(Product, {
                 where: { name: createProductDto.name }
@@ -86,8 +86,6 @@ export class ProductsService {
             for (const v of createProductDto.variants) {
                 const color = await manager.findOneOrFail('Color', { where: { id: v.colorId } });
                 const size = await manager.findOneOrFail('Size', { where: { id: v.sizeId } });
-
-
                 const variant = manager.create('ProductVariant', {
                     price: v.price,
                     compare_at_price: v.compare_at_price,
@@ -146,7 +144,7 @@ export class ProductsService {
                 }
             }
 
-          
+
             await manager.save(product);
 
 
@@ -189,9 +187,6 @@ export class ProductsService {
                     if (!variant) {
                         // bắt buộc phải có sku, colorId, sizeId khi tạo
                         console.log('Create new variant', incoming);
-                        if (!incoming.sku) {
-                            throw new BadRequestException('Variant.sku is required when creating a new variant');
-                        }
                         if (!incoming.colorId || !incoming.sizeId) {
                             throw new BadRequestException('colorId and sizeId are required when creating a new variant');
                         }
@@ -201,7 +196,6 @@ export class ProductsService {
 
                         variant = manager.create(ProductVariant, {
                             product: product,
-                            sku: incoming.sku,
                             price: toNumericString(incoming.price) ?? '0',
                             compare_at_price: toNumericString(incoming.compare_at_price) ?? undefined,
                             quantity: incoming.quantity ?? 0,
@@ -544,5 +538,30 @@ export class ProductsService {
         });
         return transformedCategories;
     }
+
+    async getTop5BestSellerByCategory(categoryId: number) {
+        const result = await this.productRepo
+            .createQueryBuilder("p")
+            .leftJoinAndSelect("p.category", "c")
+            .leftJoinAndSelect("p.variants", "v")
+            .select("p.id", "id")
+            .addSelect("p.name", "name")
+            .addSelect("COALESCE(SUM(v.sold), 0)", "totalSold")
+            .where("c.id = :categoryId", { categoryId })
+            .groupBy("p.id")
+            .addGroupBy("p.name")
+            .orderBy("COALESCE(SUM(v.sold), 0)", "DESC")
+            .limit(5)
+            .getRawMany();
+        const productIds = result.map(r => r.id);
+        const products: any[] = []
+        for (const id of productIds) {
+            const product = await this.getProductById(String(id));
+            products.push(product);
+        }
+        return products;
+    }
+
+
 
 }

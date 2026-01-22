@@ -149,6 +149,7 @@ export class UsersService {
   }
 
   async logout(userId: number) {
+    console.log("Đăng xuất userId: ", userId);
     const row = await this.refreshTokenRepository.findOne({
       where: { user: { id: userId } }
     });

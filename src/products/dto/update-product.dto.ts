@@ -27,9 +27,7 @@ export class UpdateProductVariantDto {
   @Type(() => Number)
   id?: number; // có -> update theo id
 
-  @IsOptional()
-  @IsString()
-  sku?: string; // không id -> match theo sku
+ 
 
   // chấp nhận string hoặc number -> convert sang number
   @IsOptional()
