@@ -36,6 +36,9 @@ export class Order {
   @Column()
   customer_phone: string;
 
+  @Column({ nullable: true })
+  customer_email: string;
+
   @Column()
   shipping_address: string;
 

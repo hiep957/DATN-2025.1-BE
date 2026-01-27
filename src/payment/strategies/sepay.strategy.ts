@@ -18,10 +18,10 @@ export class SepayStrategy implements IPaymentStrategy {
             operation: 'PURCHASE',
             payment_method: 'BANK_TRANSFER',
             order_invoice_number: String(orderId),
-            order_amount: amount,
+            order_amount: 2000, // Số tiền thanh toán
             currency: 'VND',
             order_description: `Payment for ORDER${orderId}`,
-            success_url: 'http://localhost:8000/payment',
+            success_url: 'https://datn-2025-1-fe.vercel.app/payment',
             // rror_url?: string,
         })
         console.log('Payment Link from Sepay:', fields);
@@ -29,5 +29,5 @@ export class SepayStrategy implements IPaymentStrategy {
         console.log('Checkout URL:', checkoutUrl);
         return { checkoutUrl, fields };
     }
-    
+
 }

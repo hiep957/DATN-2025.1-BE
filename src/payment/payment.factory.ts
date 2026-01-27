@@ -9,7 +9,6 @@ import { VnPayStrategy } from './strategies/vnpay.strategy';
 export class PaymentStrategyFactory {
   // Inject sẵn 2 thằng này vào đây (DI - Association trong biểu đồ)
   constructor(
-    private readonly codStrategy: CodStrategy,
     private readonly sePayStrategy: SepayStrategy,
     private readonly vnPayStrategy: VnPayStrategy,
   ) {}
@@ -21,6 +20,6 @@ export class PaymentStrategyFactory {
     if (type === 'VNPAY') {
         return this.vnPayStrategy;
     }
-    return this.codStrategy; // Mặc định là COD
+    throw new Error(`Unsupported payment type: ${type}`);
   }
 }

@@ -11,8 +11,28 @@ export class PaymentController {
   constructor(private readonly paymentService: PaymentService) { }
 
   @Post('/create-payment')
-  async createPayment(@Body() body: { type: 'COD' | 'VNPAY'; orderId: string; amount: number }) {
+  async createPayment(@Body() body: { type: 'SEPAY' | 'VNPAY'; orderId: string; amount: number }) {
     return this.paymentService.createPayment(body.type, body.orderId, body.amount);
+  }
+
+  @Post('/sepay-ipn')
+  async sepayIpn(
+    @Body() body: any,
+  ) {
+
+    // 2) Xử lý event
+    await this.paymentService.handleSepayIpn(body);
+
+    // 3) ACK cho SePay
+    return { success: true };
+  }
+
+
+  @Post('/vnpay-ipn')
+  async vnpayIpn(@Query() query: Record<string, any>, @Res() res: Response) {
+    console.log('VNPAY IPN Request:', query);
+    const result = await this.paymentService.handleVnpayIpn(query);
+    return result
   }
 
   @Post('/user-orders')
@@ -66,24 +86,6 @@ export class PaymentController {
   }
 
 
-  @Post('/sepay-ipn')
-  async sepayIpn(
-    @Body() body: any,
-  ) {
 
-    // 2) Xử lý event
-    await this.paymentService.handleSepayIpn(body);
-
-    // 3) ACK cho SePay
-    return { success: true };
-  }
-
-
-  @Post('/vnpay-ipn')
-  async vnpayIpn(@Query() query: Record<string, any>, @Res() res: Response) {
-    console.log('VNPAY IPN Request:', query);
-    const result = await this.paymentService.handleVnpayIpn(query);
-    return result
-  }
 
 }

@@ -539,7 +539,7 @@ export class ProductsService {
         return transformedCategories;
     }
 
-    async getTop5BestSellerByCategory(categoryId: number) {
+    async getTop4BestSellerByCategory(categoryId: number) {
         const result = await this.productRepo
             .createQueryBuilder("p")
             .leftJoinAndSelect("p.category", "c")
@@ -551,7 +551,7 @@ export class ProductsService {
             .groupBy("p.id")
             .addGroupBy("p.name")
             .orderBy("COALESCE(SUM(v.sold), 0)", "DESC")
-            .limit(5)
+            .limit(4)
             .getRawMany();
         const productIds = result.map(r => r.id);
         const products: any[] = []

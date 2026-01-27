@@ -1,10 +1,13 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { CreateDashboardDto } from './dto/create-dashboard.dto';
 import { UpdateDashboardDto } from './dto/update-dashboard.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Order } from 'src/common/entities/order.entity';
-import { Between, Repository } from 'typeorm';
+import { Between, In, Repository } from 'typeorm';
 import { Category } from 'src/common/entities/category.entity';
+import { User } from 'src/users/entities/user.entity';
+import { Review } from 'src/common/entities/review.entity';
+import { DashboardKpiDto } from './dto/kpi-dashboard.dto';
 
 
 type DailyRevenue = {
@@ -21,6 +24,10 @@ export class DashboardService {
     private readonly orderRepository: Repository<Order>,
     @InjectRepository(Category)
     private readonly categoryRepository: Repository<Category>,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
+    @InjectRepository(Review)
+    private readonly reviewRepository: Repository<Review>,
   ) { }
   /** Format Date -> 'yyyy-mm-dd' (để group theo ngày) */
 
@@ -90,7 +97,7 @@ export class DashboardService {
     console.log('Lấy doanh thu từ', start, 'đến', end);
     // Lấy chỉ amount + createdAt trong khoảng [start, end]
     const transactions = await this.orderRepository.find({
-      where: { created_at: Between(start, end) },
+      where: { created_at: Between(start, end), order_status: 'completed' },
       select: ['grand_total', 'created_at'],
       order: { created_at: 'ASC' },
     });
@@ -138,19 +145,122 @@ export class DashboardService {
     };
   }
 
-  findAll() {
-    return `This action returns all dashboard`;
+  async getAllKpis(): Promise<DashboardKpiDto> {
+    const [revenue, orders, users, reviews] = await Promise.all([
+      this.getRevenueKpi(),
+      this.getOrderKpi(),
+      this.getUserKpi(),
+      this.getReviewKpi(),
+    ]);
+
+    return {
+      totalRevenue: revenue.totalRevenue,
+      todayRevenue: revenue.todayRevenue,
+
+      totalOrders: orders.totalOrders,
+      todayOrders: orders.todayOrders,
+
+      totalUsers: users.totalUsers,
+      todayUsers: users.todayUsers,
+
+      totalReviews: reviews.totalReviews,
+      todayReviews: reviews.todayReviews,
+    };
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} dashboard`;
+  async getRevenueKpi() {
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+
+    const startOfTomorrow = new Date(startOfToday);
+    startOfTomorrow.setDate(startOfTomorrow.getDate() + 1);
+    const totalQb = this.orderRepository
+      .createQueryBuilder('o')
+      .select('COALESCE(SUM(o.grand_total), 0)', 'totalRevenue')
+      .andWhere('o.order_status = :done', { done: 'completed' });
+    const [totalResult] = await totalQb.getRawMany();
+
+    const todayQb = this.orderRepository
+      .createQueryBuilder('o')
+      .select('COALESCE(SUM(o.grand_total), 0)', 'todayRevenue')
+      .andWhere('o.order_status = :done', { done: 'completed' })
+      .andWhere('o.created_at >= :startOfToday AND o.created_at < :startOfTomorrow', {
+        startOfToday,
+        startOfTomorrow,
+      });
+    const [todayResult] = await todayQb.getRawMany();
+    return {
+      totalRevenue: Number(totalResult.totalRevenue ?? 0),
+      todayRevenue: Number(todayResult.todayRevenue ?? 0),
+    };
   }
 
-  update(id: number, updateDashboardDto: UpdateDashboardDto) {
-    return `This action updates a #${id} dashboard`;
+  async getOrderKpi() {
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+
+    const startOfTomorrow = new Date(startOfToday);
+    startOfTomorrow.setDate(startOfTomorrow.getDate() + 1);
+    const totalOrders = await this.orderRepository.count();
+    const todayOrders = await this.orderRepository.count({
+      where: {
+        created_at: Between(startOfToday, startOfTomorrow),
+      },
+    });
+    return {
+      totalOrders: Number(totalOrders ?? 0),
+      todayOrders: Number(todayOrders ?? 0),
+    };
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} dashboard`;
+  async getUserKpi() {
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+
+    const startOfTomorrow = new Date(startOfToday);
+    startOfTomorrow.setDate(startOfTomorrow.getDate() + 1);
+
+    // ====== (A) Tổng user ======
+    const totalUsers = await this.userRepository.count();
+
+    // ====== (B) User tạo hôm nay ======
+    const todayUsers = await this.userRepository
+      .createQueryBuilder('u')
+      .where('u.createdAt >= :start AND u.createdAt < :end', {
+        start: startOfToday,
+        end: startOfTomorrow,
+      })
+      .getCount();
+
+    return {
+      totalUsers: Number(totalUsers ?? 0),
+      todayUsers: Number(todayUsers ?? 0),
+    };
   }
+
+
+  async getReviewKpi() {
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+
+    const startOfTomorrow = new Date(startOfToday);
+    startOfTomorrow.setDate(startOfTomorrow.getDate() + 1);
+    // ====== (A) Tổng review ======
+    const totalReviews = await this.reviewRepository.count();
+    // ====== (B) Review tạo hôm nay ======
+    const todayReviews = await this.reviewRepository
+      .createQueryBuilder('r')
+      .where('r.createdAt >= :start AND r.createdAt < :end', {
+        start: startOfToday,
+        end: startOfTomorrow,
+      })
+      .getCount();
+    return {
+      totalReviews: Number(totalReviews ?? 0),
+      todayReviews: Number(todayReviews ?? 0),
+    };
+  }
+
+
+
 }

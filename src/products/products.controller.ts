@@ -77,8 +77,8 @@ export class ProductsController {
   }
 
   @Get('/top-best-seller/:categoryId')
-  async getTop5BestSellerByCategory(@Param('categoryId') categoryId: number) {
-    return this.productsService.getTop5BestSellerByCategory(categoryId);
+  async getTop4BestSellerByCategory(@Param('categoryId') categoryId: number) {
+    return this.productsService.getTop4BestSellerByCategory(categoryId);
   }
 
 

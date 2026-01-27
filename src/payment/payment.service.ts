@@ -40,7 +40,7 @@ export class PaymentService {
     private readonly paymentFactory: PaymentStrategyFactory
   ) { }
 
-  async createPayment(type: 'COD' | 'SEPAY' | 'VNPAY', orderId: string, amount: number) {
+  async createPayment(type: | 'SEPAY' | 'VNPAY', orderId: string, amount: number) {
     // Bước 1: Lấy chiến lược phù hợp
     const strategy = this.paymentFactory.getStrategy(type);
 
@@ -101,8 +101,9 @@ export class PaymentService {
 
   }
 
+  // chuyển api
   async createOrder(dto: CreateOrderDto): Promise<Order> {
-    const { userId, customer_name, customer_phone,
+    const { userId, customer_name, customer_phone, customer_email,
       shipping_address, note, payment_method,
       order_status, payment_status, transaction_code,
       subtotal, shipping_fee, discount_amount, grand_total, orderItems } = dto;
@@ -111,6 +112,7 @@ export class PaymentService {
       customer_name,
       customer_phone,
       shipping_address,
+      customer_email,
       note,
       payment_method,
       order_status,
@@ -146,6 +148,7 @@ export class PaymentService {
 
   }
 
+  //CHuyển api
   async updateOrderStatus(orderId: string, status: string): Promise<Order> {
     const order = await this.orderRepository.findOne({ where: { id: orderId } });
     if (!order) {
@@ -154,7 +157,7 @@ export class PaymentService {
     order.order_status = status;
     return this.orderRepository.save(order);
   }
-
+  //Chuyển api
   async updatePaymentStatus(orderId: string, status: PaymentStatus): Promise<Order> {
     const order = await this.orderRepository.findOne({ where: { id: orderId } });
     if (!order) {
@@ -163,7 +166,7 @@ export class PaymentService {
     order.payment_status = status;
     return this.orderRepository.save(order);
   }
-
+  //Xoá
   async createPaymentLink(createPaymentLinkDto: CreatePaymentLinkDto): Promise<{ paymentUrl: string, orderId: string }> {
     process.env.TZ = 'Asia/Ho_Chi_Minh';
     const date = new Date();
@@ -217,7 +220,7 @@ export class PaymentService {
     return { paymentUrl, orderId };
   }
 
-
+  //Xoá
   async createPaymentLinkBySepay(createPaymentLinkDto: CreatePaymentLinkDto) {
     const fields = this.client.checkout.initOneTimePaymentFields({
       operation: 'PURCHASE',
@@ -232,7 +235,7 @@ export class PaymentService {
     console.log('Checkout URL:', checkoutUrl);
     return { checkoutUrl, fields };
   }
-
+  //Giữ
   async handleVnpayIpn(query: Record<string, any>) {
     // Lấy secretKey từ config (phải giống hệt lúc tạo link)
     const secretKey = "LIZO8N5JJ2LT0SY9O56YI3RXN6318TEU";
@@ -328,7 +331,7 @@ export class PaymentService {
     return { RspCode: '00', Message: 'Confirm Success' };
   }
 
-
+  //Giữ
   async processPaymentByCod(orderId: string, userId: string): Promise<Order> {
     const order = await this.orderRepository.findOne({
       where: { id: orderId },
@@ -365,7 +368,7 @@ export class PaymentService {
     return order;
   }
 
-
+  //Chuyển
   // Get Orders for Admin with pagination and filters can be added here
   async getOrders(query: QueryOrdersDto) {
     const { q, payment_method, payment_status, order_status, sortBy, sortOrder, page = 1, limit = 10 } = query;
@@ -404,7 +407,7 @@ export class PaymentService {
       totalPages: Math.ceil(total / limit),
     };
   }
-
+  //Chuyển
   async getOrderByUser(userId: string): Promise<Order[]> {
     const orders = await this.orderRepository.find({
       where: { user: { id: Number(userId) } },

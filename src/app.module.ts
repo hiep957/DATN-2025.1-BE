@@ -35,6 +35,7 @@ import { ChatModule } from './chat/chat.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { ChatSession } from './common/entities/chat-session';
 import { ChatMessage } from './common/entities/chat-message';
+import { OrderModule } from './orders/order.module';
 
 
 
@@ -86,7 +87,7 @@ import { ChatMessage } from './common/entities/chat-message';
         // logging: config.get<string>('DB_LOGGING', 'false') === 'true',
       }),
     }),
-    ProductsModule, CategoryModule, CartsModule, PaymentModule, TestModule, ReviewModule, ChatModule, DashboardModule
+    ProductsModule, CategoryModule, CartsModule, PaymentModule, TestModule, ReviewModule, ChatModule, DashboardModule, OrderModule
 
   ],
   controllers: [AppController, UploadController],
