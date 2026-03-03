@@ -2,16 +2,21 @@
 import { Injectable } from '@nestjs/common';
 import { IPaymentStrategy } from '../interfaces/payment-strategy.interface';
 import { SePayPgClient } from 'sepay-pg-node';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class SepayStrategy implements IPaymentStrategy {
-    // Có thể inject ConfigService để lấy Key VNPAY
-    // constructor(private config: ConfigService) {}
-    private client = new SePayPgClient({
-        env: 'production',
-        merchant_id: 'SP-LIVE-HMAB9B89',
-        secret_key: 'spsk_live_XFme4sB9CCvuboBPkoEJ9jDPpq2YSLUf'
-    });
+    private client: SePayPgClient;
+
+    constructor(private configService: ConfigService) {
+        // 2. Khởi tạo client trong constructor để dùng được configService
+        this.client = new SePayPgClient({
+            env: (this.configService.get<string>('SEPAY_ENV') ?? 'production') as 'production' | 'sandbox',
+            merchant_id: this.configService.get<string>('SEPAY_MERCHANT_ID') ?? '',
+            secret_key: this.configService.get<string>('SEPAY_SECRET_KEY') ?? '',
+        });
+    }
+
     async processPayment(orderId: string, amount: number): Promise<any> {
         // Logic: Tạo URL thanh toán, mã hóa checksum gửi sang VNPay
         const fields = this.client.checkout.initOneTimePaymentFields({

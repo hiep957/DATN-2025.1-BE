@@ -46,8 +46,9 @@ export class UsersController {
 
   @Post('login')
   async login(@Body() loginUserDto: LoginUserDto, @Res({ passthrough: true }) res: Response) {
-    console.log(loginUserDto)
+    console.log('Logging in user:', loginUserDto);
     const { accessToken, refreshToken, roles, user } = await this.usersService.login(loginUserDto);
+    
     // setRefreshCookie(res, refreshToken);
     // console.log('Login data:', { accessToken, refreshToken, roles });
     return { accessToken, roles, user, refreshToken };

@@ -83,6 +83,7 @@ export class UsersService {
 
   //2. Login user
   async login(loginUserDto: LoginUserDto) {
+    console.log('Logging in user:', loginUserDto)
     const user = await this.validateUser(loginUserDto.email, loginUserDto.password);
     if (!user) {
       throw new HttpException('Invalid credentials', HttpStatus.UNAUTHORIZED);
